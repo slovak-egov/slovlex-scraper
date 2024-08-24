@@ -31,3 +31,45 @@ Processing: 2023. Done
 7/2023%Nariadenie%Nariadenie vlády Slovenskej republiky o výške pracovnej odmeny a podmienkach jej poskytovania odsúdeným%https://www.slov-lex.sk/pravne-predpisy/SK/ZZ/2023/7/
 8/2023%Zákon%Zákon, ktorým sa mení a dopĺňa zákon č. 513/1991 Zb. Obchodný zákonník v znení neskorších predpisov a ktorým sa menia a dopĺňajú niektoré zákony%https://www.slov-lex.sk/pravne-predpisy/SK/ZZ/2023/8/
 ```
+
+### Štatistiky ###
+Skript dokáže vypísať aj jednoduché štatistiky o počte predpisov.
+```
+Years processed: 35
+Lexs per year:
+  2002 785
+  1999 406
+  1998 421
+  2003 657
+  2005 690
+  2000 493
+  2006 719
+  2019 508
+  2018 415
+  2001 610
+  2007 681
+  2004 801
+  1997 402
+  2022 526
+  1994 392
+  2013 520
+  1991 671
+  2012 473
+  2023 534
+  2015 455
+  1996 392
+  1990 680
+  2016 395
+  1995 317
+  2020 453
+  2010 572
+  2014 428
+  2021 552
+  2017 361
+  1993 342
+  2024 219
+  2011 585
+  1992 795
+  2009 609
+  2008 660
+```
