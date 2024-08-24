@@ -2,6 +2,11 @@
 Scraper parsuje zoznamy legislatívnych predpisov SR dostupných na https://www.slov-lex.sk/pravne-predpisy
 Vytvorí z nich HASH a následne umožní vypísanie vo forme CSV.
 
+Webové rozhranie Slov-Lex má čistú formu a umožňuje ľahko parsovať webový obsah.
+
+Dáta referencuje cez XPath `//table[@id="YearTable"]/tbody/tr`
+Na parsovanie používa Perl modul https://metacpan.org/pod/Web::Scraper
+
 ### Interné dátové štruktúry ###
 ```
 %x->{$rok}->{lexs}=>[
