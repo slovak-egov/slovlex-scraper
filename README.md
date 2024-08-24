@@ -7,6 +7,9 @@ Webové rozhranie Slov-Lex má čistú formu a umožňuje ľahko parsovať webov
 Dáta referencuje cez XPath `//table[@id="YearTable"]/tbody/tr`
 Na parsovanie používa Perl modul https://metacpan.org/pod/Web::Scraper
 
+Do budúcna by mohol byť rozšírený na spracovanie štruktúr jednotlivých znení legislatívnych predpisov.
+Výstup môže byť použitý ako referenčný zoznam pre referencie v IS.
+
 ### Interné dátové štruktúry ###
 ```
 %x->{$rok}->{lexs}=>[
