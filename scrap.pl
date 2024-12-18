@@ -7,22 +7,20 @@ use URI;
 use Web::Scraper;
 use Encode;
 use Data::Dumper;
-my $lexuri = "https://www.slov-lex.sk/pravne-predpisy/SK/ZZ";
+my $lexuri = "https://static.slov-lex.sk/static/SK/ZZ";
 my %lexdump;
-my @years = (2000..2024);
+my @years = (2020..2024);
 my %stats;
 
 sub lex_scrap {
     my $year = shift;
     die "Wrong year: $year" unless $year =~ m/\d{4}/;
     my $lexs = scraper {
-    # Parse all TDs inside 'table[width="100%]"', store them into
-	    # an array 'authors'.  We embed other scrapers for each TD.
 	    process '//table[@id="YearTable"]/tbody/tr', "lexs[]" => scraper {
 	      # And, in each TD,
-	      process '//td[1]/a', uri => '@href';
-	      process '//td[1]/a', index => [ 'TEXT', qr/(\d+\/\d{4})/ ];
-	      process '//td[2]', fullname => 'TEXT';
+	      process '//td[1]', index => [ 'TEXT', qr/(\d+\/\d{4})/ ];
+	      process '//td[2]/a', uri => '@href';
+	      process '//td[2]/a', fullname => 'TEXT';
 	    };
     };
     my $res = $lexs->scrape( URI->new("$lexuri/$year/") );
