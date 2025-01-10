@@ -9,12 +9,19 @@ use Encode;
 use Data::Dumper;
 my $lexuri = "https://static.slov-lex.sk/static/SK/ZZ";
 my %lexdump;
-my @years = (2020..2024);
+my $since;
+my $till;
 my %stats;
+my $cache;
+my $proxy;
+
 use LWP::UserAgent;
 my $ua = LWP::UserAgent->new;
-    
-GetOptions ("years=s" => \@years,
+$ua->agent('Mozilla/5.0');
+
+use Getopt::Long;    
+GetOptions ("since=s" => \$since,
+            "till=s"  => \$till,
             "proxy=s" => \$proxy,
 	    "cache=s" => \$cache)
 or die("Error in arguments!\n");
@@ -22,7 +29,16 @@ or die("Error in arguments!\n");
 # proxy support
 if(defined $proxy){
     $ua->proxy(['http', 'https'], $proxy);
-    $ua->agent('Mozilla/5.0');
+}
+
+if (defined $cache) {
+    use HTTP::Cache::Transparent;
+    HTTP::Cache::Transparent::init( {
+        BasePath => $cache,
+        Verbose   => 1,
+        MaxAge    => 8*24,
+        NoUpdate  => 15*60,
+    } );
 }
 
 sub lex_scrap {
@@ -36,9 +52,34 @@ sub lex_scrap {
 	      process '//td[2]/a', fullname => 'TEXT';
 	    };
     };
-    my $res = $lexs->scrape( URI->new("$lexuri/$year/") );
+    $ua->agent('Mozilla/5.0');
     $lexs->user_agent($ua);
+    my $res = $lexs->scrape( URI->new("$lexuri/$year/") );
     return get_lextype($res);
+}
+
+sub lex_history {
+    my $h = shift;
+    #my $revs;
+    my @ra;
+    
+    foreach my $lex (@{$h->{lexs}}){
+        undef @ra;
+        print STDERR "   $lex->{index}\n";
+        print Dumper $lex->{uri};
+        my $revs = scraper {
+              #process '//table[@id="HistoriaTable"]/tbody/tr', "revisions[]" => scraper {
+              process '//tr[@class="effectivenessHistoryItem"]', "revisions[]" => scraper {
+              # And, in each TD,
+              process '//td[1]', index => [ 'TEXT' ];
+              process '//td[2]/a', uri => '@href';
+              #process '//td[2]/a/span', desc => 'TEXT';
+            };
+         };
+         $lex->{revisions} = $revs->scrape( $lex->{uri} );
+         #print Dumper $x;
+    }
+    #return @ra;
 }
 
 sub get_lextype {
@@ -72,15 +113,16 @@ sub print_stats {
     }
 }
 
-for my $y (@years) {
+for my $y ($since..$till) {
     print STDERR "Processing: $y";
-    my $rs = lex_scrap($y);
-    $lexdump{$y} = $rs;
+    $lexdump{$y} = lex_scrap($y);
+    #$lexdump{$y} = $rs;
+    lex_history($lexdump{$y});
     print STDERR ". Done\n";
     print_lex($y);
 }
 
 #print_stats;
-#print Dumper %lexdump;
+print Dumper %lexdump;
 
 1;
