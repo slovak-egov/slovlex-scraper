@@ -11,6 +11,19 @@ my $lexuri = "https://static.slov-lex.sk/static/SK/ZZ";
 my %lexdump;
 my @years = (2020..2024);
 my %stats;
+use LWP::UserAgent;
+my $ua = LWP::UserAgent->new;
+    
+GetOptions ("years=s" => \@years,
+            "proxy=s" => \$proxy,
+	    "cache=s" => \$cache)
+or die("Error in arguments!\n");
+
+# proxy support
+if(defined $proxy){
+    $ua->proxy(['http', 'https'], $proxy);
+    $ua->agent('Mozilla/5.0');
+}
 
 sub lex_scrap {
     my $year = shift;
@@ -24,6 +37,7 @@ sub lex_scrap {
 	    };
     };
     my $res = $lexs->scrape( URI->new("$lexuri/$year/") );
+    $lexs->user_agent($ua);
     return get_lextype($res);
 }
 
