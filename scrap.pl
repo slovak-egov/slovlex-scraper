@@ -66,7 +66,6 @@ sub lex_history {
     foreach my $lex (@{$h->{lexs}}){
         undef @ra;
         print STDERR "   $lex->{index}\n";
-        print Dumper $lex->{uri};
         my $revs = scraper {
               #process '//table[@id="HistoriaTable"]/tbody/tr', "revisions[]" => scraper {
               process '//tr[@class="effectivenessHistoryItem"]', "revisions[]" => scraper {
@@ -76,10 +75,24 @@ sub lex_history {
               #process '//td[2]/a/span', desc => 'TEXT';
             };
          };
-         $lex->{revisions} = $revs->scrape( $lex->{uri} );
-         #print Dumper $x;
+         $lex->{revisions} = $revs->scrape( $lex->{uri} )->{revisions};
     }
     #return @ra;
+}
+
+sub lex_structure {
+    my $h = shift;
+
+    my $revs = scraper {
+        #process '//table[@id="HistoriaTable"]/tbody/tr', "structure[]" => scraper {
+        process '//tr[@class="effectivenessHistoryItem"]', "revisions[]" => scraper {
+        # And, in each TD,
+        process '//td[1]', index => [ 'TEXT' ];
+        process '//td[2]/a', uri => '@href';
+        #process '//td[2]/a/span', desc => 'TEXT';
+        };
+    };
+    #print Dumper $revs->scrape( $lex->{uri} ); 
 }
 
 sub get_lextype {
@@ -116,13 +129,22 @@ sub print_stats {
 for my $y ($since..$till) {
     print STDERR "Processing: $y";
     $lexdump{$y} = lex_scrap($y);
-    #$lexdump{$y} = $rs;
     lex_history($lexdump{$y});
+
+    foreach my $lex (@{$lexdump{$y}{lexs}}){
+        print Dumper $lex;
+        foreach my $rev (@{$lex->{revisions}}){
+        #    $rev->{structure} = lex_structure($rev->{uri});
+        print Dumper $rev;
+        }
+    }
+
     print STDERR ". Done\n";
     print_lex($y);
 }
 
 #print_stats;
 print Dumper %lexdump;
+
 
 1;
