@@ -7,7 +7,8 @@ Webové rozhranie Slov-Lex má čistú formu a umožňuje ľahko parsovať webov
 Dáta referencuje cez XPath `//table[@id="YearTable"]/tbody/tr`
 Na parsovanie používa Perl modul https://metacpan.org/pod/Web::Scraper
 
-Do budúcna by mohol byť rozšírený na spracovanie štruktúr jednotlivých znení legislatívnych predpisov.
+Je rozšírovaný na spracovanie štruktúr jednotlivých znení legislatívnych predpisov.
+Aktuálna verzia sťahuje informácie o historických zneniach/vydaniach legislatívnych predpisov.
 Výstup môže byť použitý ako referenčný zoznam pre referencie v IS.
 
 ### Interné dátové štruktúry ###
@@ -17,13 +18,19 @@ Výstup môže byť použitý ako referenčný zoznam pre referencie v IS.
                   index=>"číslo_predpisu/rok",
                   type=>"typ predpisu",
                   fullname=>"plný názov predpisu",
-                  uri=>"Slov-Lex URI predpisu"
+                  uri=>URI objekt "Slov-Lex URI predpisu"
+                  revisions => [
+                      {
+                         'index'=>"poradové číslo revízie",
+                         'uri'=>URI objekt "Slov-Lex URI revízie predpisu"
+                      }
+                  ]
                   }]
 ```
 
 ### Príklad výstupu ###
 ```
-:~/slov-lex$ perl scrap.pl
+:~/slov-lex$ perl scrap.pl -since=2023 -till=2023 -cache=./slovlex-cache -proxy=http://proxyhost:port
 Processing: 2023. Done
 1/2023%Zákon%Zákon, ktorým sa mení a dopĺňa zákon č. 311/2001 Z. z. Zákonník práce v znení neskorších predpisov%https://www.slov-lex.sk/pravne-predpisy/SK/ZZ/2023/1/
 2/2023%Zákon%Zákon, ktorým sa mení a dopĺňa zákon č. 220/2004 Z. z. o ochrane a využívaní poľnohospodárskej pôdy a o zmene zákona č. 245/2003 Z. z. o integrovanej prevencii a kontrole znečisťovania životného prostredia a o zmene a doplnení niektorých zákonov v znení neskorších predpisov a ktorým sa menia a dopĺňajú niektoré zákony%https://www.slov-lex.sk/pravne-predpisy/SK/ZZ/2023/2/
