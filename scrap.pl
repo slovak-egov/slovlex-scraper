@@ -8,7 +8,7 @@ use Web::Scraper;
 use Encode;
 use Data::Dumper;
 my $lexuri = "https://static.slov-lex.sk/static/SK/ZZ";
-my %lexdump;
+my $lexdump;
 my $since;
 my $till;
 my %stats;
@@ -75,6 +75,7 @@ sub lex_history {
               #process '//td[2]/a/span', desc => 'TEXT';
             };
          };
+	 $revs->user_agent($ua);
          $lex->{revisions} = $revs->scrape( $lex->{uri} )->{revisions};
     }
     #return @ra;
@@ -84,15 +85,14 @@ sub lex_structure {
     my $h = shift;
 
     my $revs = scraper {
-        #process '//table[@id="HistoriaTable"]/tbody/tr', "structure[]" => scraper {
-        process '//tr[@class="effectivenessHistoryItem"]', "revisions[]" => scraper {
-        # And, in each TD,
-        process '//td[1]', index => [ 'TEXT' ];
-        process '//td[2]/a', uri => '@href';
-        #process '//td[2]/a/span', desc => 'TEXT';
+        process '//div[@class="obsah"]', "structure" => scraper {
+            # And, in each TD,
+            process '//a', uris[] => '@href';
+            #process '//a/span', name => [ 'TEXT' ];
+            #process '//td[2]/a/span', desc => 'TEXT';
         };
     };
-    #print Dumper $revs->scrape( $lex->{uri} ); 
+    $h->{structure} = $revs->scrape( $h->{uri} )->{structure};
 }
 
 sub get_lextype {
@@ -108,7 +108,7 @@ sub print_lex {
     my $year = shift;
     die "Wrong year: $year" unless $year =~ m/\d{4}/;
 
-    for my $lex (@{$lexdump{$year}->{'lexs'}}) {
+    for my $lex (@{$lexdump->{$year}->{'lexs'}}) {
         print Encode::encode("utf8", join "%", $lex->{'index'}, $lex->{'type'}, $lex->{'fullname'}, $lex->{'uri'});
         print "\n";
     }
@@ -116,12 +116,12 @@ sub print_lex {
 
 sub print_stats {
     print "Years processed: ";
-    print scalar keys %lexdump;
+    print scalar keys %{$lexdump};
     print "\n";
     print "Lexs per year:\n";
 
-    foreach my $y (keys %lexdump){
-        $stats{$y}{'lexno'} = scalar @{$lexdump{$y}{lexs}};
+    foreach my $y (keys %{$lexdump}){
+        $stats{$y}{'lexno'} = scalar @{$lexdump->{$y}{lexs}};
         print "  $y $stats{$y}{'lexno'} \n";
     }
 }
@@ -129,13 +129,12 @@ sub print_stats {
 for my $y ($since..$till) {
     print STDERR "Processing: $y";
     $lexdump{$y} = lex_scrap($y);
-    lex_history($lexdump{$y});
+    lex_history($lexdump->{$y});
 
-    foreach my $lex (@{$lexdump{$y}{lexs}}){
+    foreach my $lex (@{$lexdump->{$y}->{lexs}}){
         print Dumper $lex;
         foreach my $rev (@{$lex->{revisions}}){
-        #    $rev->{structure} = lex_structure($rev->{uri});
-        print Dumper $rev;
+            $rev->{structure} = lex_structure($rev);
         }
     }
 
