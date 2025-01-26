@@ -12,18 +12,22 @@ my $lexdump;
 my $since;
 my $till;
 my %stats;
+my $file;
 my $cache;
 my $proxy;
 
-use LWP::UserAgent;
-my $ua = LWP::UserAgent->new;
+#use LWP::UserAgent;
+#my $ua = LWP::UserAgent->new;
+use LWP::UserAgent::Determined;
+my $ua = LWP::UserAgent::Determined->new;
 $ua->agent('Mozilla/5.0');
 
 use Getopt::Long;    
 GetOptions ("since=s" => \$since,
             "till=s"  => \$till,
             "proxy=s" => \$proxy,
-	    "cache=s" => \$cache)
+            "file=s"  => \$file,
+	        "cache=s" => \$cache)
 or die("Error in arguments!\n");
 
 # proxy support
@@ -37,8 +41,22 @@ if (defined $cache) {
         BasePath => $cache,
         Verbose   => 1,
         MaxAge    => 8*24,
-        NoUpdate  => 15*60,
+        NoUpdate  => 60*60,
     } );
+}
+
+sub to_file {
+    #json output
+    use JSON;
+    use File::Path qw(make_path);
+    use POSIX 'strftime';
+    use File::stat;
+    my $datestamp = strftime '%Y-%m-%d', localtime;
+
+    open(FH, '>', "$file.$datestamp") or die $!;
+    print FH to_json($lexdump, {utf8 => 1, pretty => 1, canonical => 1,
+                                allow_blessed => 1, convert_blessed => 1, allow_tags => 1});
+    close(FH);
 }
 
 sub lex_scrap {
@@ -167,8 +185,9 @@ for my $y ($since..$till) {
     print_lex($y);
 }
 
+to_file() if (defined $file);
 #print_stats;
-print Dumper $lexdump;
+#print Dumper $lexdump;
 
 
 1;
