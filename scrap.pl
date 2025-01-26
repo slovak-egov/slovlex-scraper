@@ -44,7 +44,7 @@ if (defined $cache) {
 sub lex_scrap {
     my $year = shift;
     die "Wrong year: $year" unless $year =~ m/\d{4}/;
-    my $lexs = scraper {
+    my $lexscraper = scraper {
 	    process '//table[@id="YearTable"]/tbody/tr', "lexs[]" => scraper {
 	      # And, in each TD,
 	      process '//td[1]', index => [ 'TEXT', qr/(\d+\/\d{4})/ ];
@@ -52,15 +52,37 @@ sub lex_scrap {
 	      process '//td[2]/a', fullname => 'TEXT';
 	    };
     };
-    $ua->agent('Mozilla/5.0');
-    $lexs->user_agent($ua);
-    my $res = $lexs->scrape( URI->new("$lexuri/$year/") );
+    $lexscraper->user_agent($ua);
+    my $res = $lexscraper->scrape( URI->new("$lexuri/$year/") );
     return get_lextype($res);
+}
+
+sub lex_info {
+    my $h = shift;
+    my $x = shift;
+    #$x = "main" if (!defined $x);
+    
+    my $revs = scraper {
+        process '//table[@id="InfoTable"]/tr', "infos[]" => scraper {
+        # And, in each TD,
+        process '//td[1]', info => [ 'TEXT', qr/(.*):$/ ];
+        process '//td[2]', value => [ 'TEXT'];
+        };
+    };
+	$revs->user_agent($ua);
+    my $dup = $h->clone();
+    $dup->path_segments($dup->path_segments(), "vyhlasene_znenie.html") if ($x eq "main");
+    my $arr = $revs->scrape( $dup )->{infos};
+    my $a;
+    foreach my $f (@$arr) {
+        $a->{lc($f->{info})} = $f->{value};
+    }
+    undef $dup;
+    return $a;
 }
 
 sub lex_history {
     my $h = shift;
-    #my $revs;
     my @ra;
     
     foreach my $lex (@{$h->{lexs}}){
@@ -77,17 +99,17 @@ sub lex_history {
          };
 	 $revs->user_agent($ua);
          $lex->{revisions} = $revs->scrape( $lex->{uri} )->{revisions};
+         $lex->{info} = lex_info($lex->{uri}, "main");
     }
-    #return @ra;
 }
 
 sub lex_structure {
     my $h = shift;
 
     my $revs = scraper {
-        process '//div[@class="obsah"]', "structure" => scraper {
+        process '//div[@class="obsah"]', "structure[]" => scraper {
             # And, in each TD,
-            process '//a', uris[] => '@href';
+            process '//a', uri => '@href';
             #process '//a/span', name => [ 'TEXT' ];
             #process '//td[2]/a/span', desc => 'TEXT';
         };
@@ -128,13 +150,16 @@ sub print_stats {
 
 for my $y ($since..$till) {
     print STDERR "Processing: $y";
-    $lexdump{$y} = lex_scrap($y);
+    $lexdump->{$y} = lex_scrap($y);
+
     lex_history($lexdump->{$y});
+    #lex_info($lexdump->{$y}, "main");
 
     foreach my $lex (@{$lexdump->{$y}->{lexs}}){
-        print Dumper $lex;
+        #print Dumper $lex;
         foreach my $rev (@{$lex->{revisions}}){
             $rev->{structure} = lex_structure($rev);
+            $rev->{info} = lex_info($rev->{uri}, "revision");
         }
     }
 
@@ -143,7 +168,7 @@ for my $y ($since..$till) {
 }
 
 #print_stats;
-print Dumper %lexdump;
+print Dumper $lexdump;
 
 
 1;
